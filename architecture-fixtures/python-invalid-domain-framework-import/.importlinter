@@ -1,0 +1,44 @@
+# Baseline: a correct hexagon. Every contract must be KEPT.
+#
+# This fixture is the control in the experiment. If it ever fails, the contracts
+# have become too strict and would reject legitimate code; if the invalid
+# fixtures ever pass, the contracts have become too loose. Both directions
+# matter, which is why the valid case is asserted as explicitly as the broken
+# ones.
+
+[importlinter]
+root_packages =
+    shopcart
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = ARCH-002/003/007 — hexagonal layers point inward
+type = layers
+layers =
+    shopcart.bootstrap
+    shopcart.adapters.inbound : shopcart.adapters.outbound
+    shopcart.application
+    shopcart.domain
+exhaustive = False
+
+[importlinter:contract:adapter-independence]
+name = ARCH-004/005 — inbound and outbound adapters are independent
+type = independence
+modules =
+    shopcart.adapters.inbound
+    shopcart.adapters.outbound
+
+[importlinter:contract:domain-is-framework-free]
+name = ARCH-001 — domain imports no framework
+type = forbidden
+source_modules =
+    shopcart.domain
+forbidden_modules =
+    fastapi
+    flask
+    django
+    sqlalchemy
+    pydantic
+    requests
+    httpx
+allow_indirect_imports = False
