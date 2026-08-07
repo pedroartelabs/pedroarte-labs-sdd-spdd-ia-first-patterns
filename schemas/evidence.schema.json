@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns/schemas/evidence.schema.json",
+  "title": "Evidence report",
+  "description": "Structured evidence block embedded in a specification's evidence.md. Article 7 of the constitution: a change is complete only when evidence exists. 'It should work' is not evidence; a recorded command with a recorded result is.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_id", "collected_at", "entries"],
+  "properties": {
+    "spec_id": {
+      "type": "string",
+      "pattern": "^SPEC-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})$"
+    },
+    "collected_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "collected_by": {
+      "type": "string"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "command", "result"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^EVIDENCE-[0-9]{3}$"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "build",
+              "unit-test",
+              "contract-test",
+              "integration-test",
+              "architecture",
+              "lint",
+              "typing",
+              "coverage",
+              "security",
+              "documentation",
+              "acceptance-criterion",
+              "manual"
+            ]
+          },
+          "command": {
+            "type": "string",
+            "minLength": 3,
+            "description": "The exact command executed. An empty or hypothetical command is not evidence."
+          },
+          "result": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "SKIPPED", "NOT_EXECUTED"]
+          },
+          "covers_acceptance_criteria": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^AC-[0-9]{3}$" }
+          },
+          "summary": { "type": "string" },
+          "artifact": {
+            "type": "string",
+            "description": "Optional path or CI run URL where the raw output can be inspected."
+          },
+          "notes": { "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "result": { "enum": ["SKIPPED", "NOT_EXECUTED"] } },
+              "required": ["result"]
+            },
+            "then": {
+              "required": ["notes"],
+              "description": "A skipped or unexecuted check must explain why. Silence is how a gap becomes a false PASS."
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns/schemas/traceability.schema.json",
+  "title": "Traceability manifest",
+  "description": "Maps requirement -> acceptance criterion -> use case -> source files -> tests -> architecture rules -> ADRs -> prompt -> evidence. Traceability is centralised here and in the pull request, never smeared across per-line code comments.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_id", "requirements"],
+  "properties": {
+    "spec_id": {
+      "type": "string",
+      "pattern": "^SPEC-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})$"
+    },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "requirements": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^REQ-[0-9]{3}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "acceptance_criteria"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 5
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^AC-[0-9]{3}$"
+            }
+          },
+          "use_cases": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "source_files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Repository-relative path. validate-traceability.py fails when the path does not exist."
+            }
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["language", "name", "file"],
+              "properties": {
+                "language": { "type": "string", "enum": ["java", "python"] },
+                "name": { "type": "string", "minLength": 3 },
+                "file": { "type": "string", "minLength": 3 }
+              }
+            }
+          },
+          "architecture_rules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^ARCH-[0-9]{3}$"
+            }
+          },
+          "adrs": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^ADR-[0-9]{4}$" }
+          },
+          "prompts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^PROMPT-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})$"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^EVIDENCE-[0-9]{3}$" }
+          }
+        }
+      }
+    }
+  }
+}

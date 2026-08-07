@@ -1,0 +1,272 @@
+---
+# Canonical architecture policy.
+#
+# This file is the SINGLE SOURCE OF TRUTH for hexagonal architecture rules in
+# this repository. Agent instruction files (CLAUDE.md, AGENTS.md, .claude/rules,
+# .github/copilot-instructions.md, .cursor/rules) are GENERATED from it by
+# `scripts/generate-agent-rules.py`.
+#
+# Never restate these rules by hand somewhere else. Add them here and regenerate.
+id: architecture-policy
+version: 1.0.0
+title: Hexagonal Architecture Policy
+status: active
+owner: pedroartelabs
+strategy: package-by-bounded-context-first-then-hexagonal-layers-inside
+
+summary: >-
+  Dependencies point inward. The domain is the centre and knows nothing about
+  frameworks, transports or storage. Application orchestrates use cases behind
+  ports. Adapters implement ports and translate technology. Bootstrap is the
+  only place allowed to wire everything together.
+
+layers:
+  - id: domain
+    title: Domain
+    description: >-
+      Entities, value objects, aggregates, domain services, domain events and
+      domain exceptions. Pure business behaviour and invariants.
+    may_depend_on: []
+    java_package_pattern: "..domain.."
+    python_module_pattern: "payment.domain"
+    contains:
+      - entities
+      - value-objects
+      - aggregates
+      - domain-events
+      - domain-exceptions
+      - domain-services
+
+  - id: application
+    title: Application
+    description: >-
+      Use cases, inbound ports, outbound ports, application commands and
+      results. Orchestration, authorization and transaction policy.
+    may_depend_on: [domain]
+    java_package_pattern: "..application.."
+    python_module_pattern: "payment.application"
+    contains:
+      - inbound-ports
+      - outbound-ports
+      - use-cases
+      - application-commands
+      - application-results
+
+  - id: adapter_inbound
+    title: Inbound adapters
+    description: >-
+      REST controllers, CLI entry points, message consumers, schedulers.
+      They translate transport into application commands.
+    may_depend_on: [domain, application]
+    java_package_pattern: "..adapter.in.."
+    python_module_pattern: "payment.adapters.inbound"
+    contains:
+      - rest-controllers
+      - request-dtos
+      - response-dtos
+      - transport-error-mappers
+
+  - id: adapter_outbound
+    title: Outbound adapters
+    description: >-
+      Persistence, HTTP clients, messaging publishers, clock, id generation.
+      They implement outbound ports declared by the application.
+    may_depend_on: [domain, application]
+    java_package_pattern: "..adapter.out.."
+    python_module_pattern: "payment.adapters.outbound"
+    contains:
+      - repository-implementations
+      - persistence-models
+      - event-publishers
+      - system-clock
+      - id-generators
+
+  - id: bootstrap
+    title: Bootstrap / composition root
+    description: >-
+      The only module allowed to know every other module, and only in order to
+      wire them: dependency injection, configuration, lifecycle, observability.
+    may_depend_on: [domain, application, adapter_inbound, adapter_outbound]
+    java_package_pattern: "..bootstrap.."
+    python_module_pattern: "payment.bootstrap"
+    contains:
+      - composition-root
+      - dependency-wiring
+      - configuration
+
+forbidden_dependencies:
+  - from: domain
+    to: [application, adapter_inbound, adapter_outbound, bootstrap]
+    reason: The domain is the centre; nothing inside it may point outward.
+  - from: application
+    to: [adapter_inbound, adapter_outbound, bootstrap]
+    reason: The application talks to technology only through ports it declares.
+  - from: adapter_inbound
+    to: [adapter_outbound, bootstrap]
+    reason: Adapters are siblings; they must never call each other directly.
+  - from: adapter_outbound
+    to: [adapter_inbound, bootstrap]
+    reason: Adapters are siblings; they must never call each other directly.
+
+forbidden_imports:
+  java:
+    domain:
+      - org.springframework
+      - jakarta.persistence
+      - jakarta.servlet
+      - javax.persistence
+      - org.hibernate
+      - com.fasterxml.jackson
+      - org.apache.kafka
+      - software.amazon.awssdk
+      - java.sql
+      - javax.sql
+      - java.net.http
+      - io.micrometer
+      - org.slf4j
+    application:
+      - org.springframework
+      - jakarta.persistence
+      - org.hibernate
+      - com.fasterxml.jackson
+      - org.apache.kafka
+      - software.amazon.awssdk
+      - java.sql
+      - java.net.http
+  python:
+    domain:
+      - fastapi
+      - flask
+      - django
+      - starlette
+      - sqlalchemy
+      - pydantic
+      - boto3
+      - botocore
+      - httpx
+      - requests
+      - aiohttp
+      - kafka
+      - confluent_kafka
+      - redis
+      - psycopg
+      - pymongo
+    application:
+      - fastapi
+      - flask
+      - django
+      - starlette
+      - sqlalchemy
+      - boto3
+      - httpx
+      - requests
+      - kafka
+      - redis
+      - psycopg
+
+naming_conventions:
+  - id: NAM-001
+    rule: Ports must not carry technology names.
+    forbidden_substrings: [Jpa, Jdbc, Rest, Http, Kafka, Sql, Mongo, Redis, Dynamo]
+    applies_to_pattern: "application.ports"
+  - id: NAM-002
+    rule: Inbound ports are named after a business capability and end with UseCase.
+    applies_to_pattern: "application.ports.inbound"
+  - id: NAM-003
+    rule: Outbound ports are named after a business responsibility (Repository, Publisher, Clock, IdGenerator).
+    applies_to_pattern: "application.ports.outbound"
+
+rules:
+  - id: ARCH-001
+    title: Domain must not depend on frameworks
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, post-edit-hook, architecture-gate]
+    rationale: >-
+      A domain coupled to a framework cannot be tested quickly, cannot be reused
+      and cannot outlive the framework.
+
+  - id: ARCH-002
+    title: Domain must not depend on application, adapters or bootstrap
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+    rationale: Dependencies point inward, never outward.
+
+  - id: ARCH-003
+    title: Application must not depend on adapters
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+    rationale: The application owns the port; the adapter implements it.
+
+  - id: ARCH-004
+    title: Inbound adapters must not depend on outbound adapters
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+    rationale: >-
+      Adapter-to-adapter coupling smuggles business flow out of the application
+      layer and creates an untestable path.
+
+  - id: ARCH-005
+    title: Outbound adapters must not depend on inbound adapters
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+
+  - id: ARCH-006
+    title: There must be no dependency cycles between packages or modules
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+
+  - id: ARCH-007
+    title: Only bootstrap may perform composition
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+
+  - id: ARCH-008
+    title: Ports must not carry technology names
+    severity: high
+    applies_to: [java, python]
+    enforced_by: [archunit, architecture-gate]
+
+  - id: ARCH-009
+    title: Domain entities must not be ORM entities and must carry no technical annotations
+    severity: blocker
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, architecture-gate]
+
+  - id: ARCH-010
+    title: Persistence models live in the outbound persistence adapter, transport DTOs live in the inbound adapter
+    severity: high
+    applies_to: [java, python]
+    enforced_by: [archunit, architecture-gate]
+
+  - id: ARCH-011
+    title: Technical exceptions must be translated at the adapter boundary
+    severity: high
+    applies_to: [java, python]
+    enforced_by: [review, ai-review]
+
+  - id: ARCH-012
+    title: Time, randomness and identifier generation must be abstracted behind outbound ports when they affect business rules
+    severity: high
+    applies_to: [java, python]
+    enforced_by: [archunit, import-linter, review]
+
+  - id: ARCH-013
+    title: Every deliberate deviation requires an ADR with owner, justification and review date
+    severity: blocker
+    applies_to: [java, python, repository]
+    enforced_by: [architecture-exceptions, review, validate-repository]
+
+exceptions_register: governance/architecture-exceptions.md
+
+references:
+  - docs/concepts/hexagonal-architecture.md
+  - docs/decisions/ADR-0001-hexagonal-architecture.md
+  - docs/decisions/ADR-0003-java-module-boundaries.md
+  - docs/decisions/ADR-0004-python-import-contracts.md

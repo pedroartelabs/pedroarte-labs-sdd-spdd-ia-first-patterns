@@ -1,0 +1,201 @@
+---
+# Canonical AI-First policy: how AI agents participate in this repository.
+# Generated adapters must never be edited by hand — change this file instead.
+id: ai-first-policy
+version: 1.0.0
+title: AI-First Delivery Policy
+status: active
+owner: pedroartelabs
+
+principle: >-
+  In an AI-First process, artificial intelligence is not merely a code
+  generator. It is a governed participant in the engineering cycle, working from
+  specifications, structured prompts, architectural policy and automated
+  validation.
+
+not_equal_to:
+  - AI-Only
+  - Vibe coding
+  - Unrestricted code generation
+  - Merging on a model's opinion
+
+pipeline:
+  - Explicit intent
+  - Versioned specification
+  - Architectural decisions
+  - Structured prompt
+  - Verifiable plan
+  - Incremental implementation
+  - Tests
+  - Architectural validation
+  - Code review
+  - Evidence
+  - Controlled evolution
+
+agent_roles:
+  allowed:
+    - specification analyst
+    - planner
+    - assistant architect
+    - implementer
+    - test generator
+    - reviewer
+    - architecture guardian
+    - documenter
+    - tool operator
+  forbidden:
+    - sole approver of a merge
+    - authority on whether a quality gate may be weakened
+    - source of truth about whether a command actually ran
+    - author of secrets or credentials
+
+spdd:
+  model: REASONS
+  sections:
+    - key: R
+      name: Requirements
+      must_answer:
+        - which problem is solved
+        - for whom
+        - expected behaviour
+        - definition of done
+        - acceptance criteria
+        - out of scope
+    - key: E
+      name: Entities
+      must_answer:
+        - entities, aggregates, value objects
+        - commands and events
+        - states and invariants
+        - relationships
+        - ubiquitous language
+    - key: A
+      name: Approach
+      must_answer:
+        - implementation strategy
+        - alternatives considered
+        - trade-offs
+        - technical decisions
+        - risks
+        - incremental strategy
+    - key: S
+      name: Structure
+      must_answer:
+        - bounded context
+        - modules and layers
+        - ports and adapters
+        - allowed dependencies
+        - files that may be modified
+        - files that must not be modified
+    - key: O
+      name: Operations
+      must_answer:
+        - small steps in order
+        - verifiable tasks
+        - tests per step
+        - validations
+        - commands to execute
+    - key: N
+      name: Norms
+      must_answer:
+        - code standards and conventions
+        - observability
+        - error handling
+        - security practices
+        - test style
+        - documentation
+        - compatibility and performance
+    - key: S2
+      name: Safeguards
+      must_answer:
+        - domain invariants
+        - forbidden dependencies
+        - security boundaries
+        - minimum quality criteria
+        - forbidden destructive actions
+        - stop conditions
+        - rollback
+        - human approval requirements
+
+  prompt_identifier_pattern: "^PROMPT-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})$"
+  required_frontmatter:
+    - prompt_id
+    - spec_id
+    - version
+    - status
+    - model_agnostic
+    - target_agent
+    - created_at
+    - approved_by
+  prompt_status_enum: [DRAFT, IN_REVIEW, APPROVED, SUPERSEDED, RETIRED]
+
+  mandatory_safeguards:
+    - do not modify files outside the declared scope
+    - do not move domain logic into adapters
+    - do not introduce a framework into the domain
+    - do not disable or skip tests
+    - do not weaken quality gates
+    - do not suppress lint or type rules without a written justification
+    - do not run destructive commands
+    - stop on critical ambiguity instead of guessing
+    - present evidence before declaring completion
+
+ai_review:
+  role: complementary
+  blocking: false
+  rationale: >-
+    Deterministic architecture and quality gates are the blocking checks. An AI
+    review adds a probabilistic second opinion; it must never be the only thing
+    standing between a change and main.
+  severities: [BLOCKER, HIGH, MEDIUM, LOW, INFORMATIONAL]
+  finding_fields:
+    - title
+    - severity
+    - file
+    - line
+    - violated_rule
+    - evidence
+    - risk
+    - recommended_fix
+    - confidence
+  must_check:
+    - divergence from the specification
+    - hexagonal violations
+    - business rules living in an adapter
+    - frameworks in the domain
+    - missing ports
+    - undue coupling
+    - security
+    - concurrency
+    - idempotency
+    - error handling
+    - observability
+    - insufficient tests
+    - documentation
+    - changes outside the declared scope
+  degraded_mode_message: >-
+    AI review skipped: provider credentials are not configured.
+    Deterministic architecture and quality gates remain active.
+
+human_review:
+  required: true
+  minimum_approvals: 1
+  codeowner_review_required_for:
+    - governance/
+    - .github/
+    - .claude/
+    - schemas/
+    - scripts/
+    - "**/payment-architecture-tests/**"
+    - "**/tests/architecture/**"
+
+disclosure:
+  pull_request_must_declare_ai_usage: true
+  options: [none, assisted, agent-generated-and-human-reviewed]
+
+references:
+  - governance/constitution.md
+  - governance/ai-usage-policy.md
+  - governance/human-review-policy.md
+  - docs/concepts/ai-first.md
+  - docs/concepts/spdd.md

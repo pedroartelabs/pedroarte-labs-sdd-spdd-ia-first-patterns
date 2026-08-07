@@ -1,0 +1,248 @@
+---
+# Canonical specification (SDD) policy.
+# Generated adapters must never be edited by hand — change this file instead.
+id: specification-policy
+version: 1.0.0
+title: Spec-Driven Development Policy
+status: active
+owner: pedroartelabs
+
+summary: >-
+  An explicit, versioned, reviewable and testable specification drives planning,
+  implementation, tests and validation. The specification is not a disposable
+  document: it remains the source of intent, scope, rules, acceptance criteria,
+  constraints, risks, decisions and traceability.
+
+identifier:
+  pattern: "^SPEC-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})$"
+  examples: [SPEC-2026-001, SPEC-EXAMPLE-001]
+  description: >-
+    SPEC-<year>-<sequence> for real work. SPEC-EXAMPLE-<sequence> is reserved
+    for the reference specifications shipped with this repository.
+
+directory_layout:
+  root: specs
+  feature_directory: "specs/<SPEC-ID>-<slug>"
+  required_files:
+    - spec.md
+  conditional_files:
+    - file: clarifications.md
+      required_from_state: IN_REVIEW
+    - file: architecture.md
+      required_from_state: APPROVED
+    - file: tasks.md
+      required_from_state: APPROVED
+    - file: prompt.reasons.md
+      required_from_state: IMPLEMENTING
+    - file: test-plan.md
+      required_from_state: APPROVED
+    - file: traceability.yaml
+      required_from_state: VERIFIED
+    - file: evidence.md
+      required_from_state: VERIFIED
+
+lifecycle:
+  initial_state: DRAFT
+  states:
+    - id: DRAFT
+      description: Being written. No production code may be produced yet.
+    - id: IN_REVIEW
+      description: Under human review; clarifications are being collected.
+    - id: APPROVED
+      description: Reviewed and accepted. Architecture and tasks exist.
+    - id: IMPLEMENTING
+      description: Implementation in progress against a versioned SPDD prompt.
+    - id: VERIFIED
+      description: All acceptance criteria proven by recorded evidence.
+    - id: RELEASED
+      description: Shipped and traceable end to end.
+    - id: REJECTED
+      description: Declined. Terminal.
+    - id: SUPERSEDED
+      description: Replaced by another specification. Terminal.
+    - id: DEPRECATED
+      description: Still historically true but no longer the target behaviour.
+    - id: CANCELLED
+      description: Abandoned before completion. Terminal.
+    - id: HOTFIX
+      description: Emergency path; requires retroactive specification within the SLA.
+
+  transitions:
+    - from: DRAFT
+      to: [IN_REVIEW, CANCELLED, REJECTED]
+    - from: IN_REVIEW
+      to: [DRAFT, APPROVED, REJECTED, CANCELLED]
+    - from: APPROVED
+      to: [IMPLEMENTING, SUPERSEDED, CANCELLED, DEPRECATED]
+    - from: IMPLEMENTING
+      to: [VERIFIED, APPROVED, CANCELLED]
+    - from: VERIFIED
+      to: [RELEASED, IMPLEMENTING]
+    - from: RELEASED
+      to: [SUPERSEDED, DEPRECATED]
+    - from: HOTFIX
+      to: [VERIFIED, RELEASED, CANCELLED]
+    - from: REJECTED
+      to: []
+    - from: SUPERSEDED
+      to: []
+    - from: CANCELLED
+      to: []
+    - from: DEPRECATED
+      to: [SUPERSEDED]
+
+  entry_requirements:
+    IN_REVIEW:
+      - id: SPEC-GATE-001
+        requires: problem_statement
+        message: "the problem statement section is empty"
+      - id: SPEC-GATE-002
+        requires: expected_outcome
+        message: "the expected outcome / definition of done is empty"
+    APPROVED:
+      - id: SPEC-GATE-010
+        requires: acceptance_criteria
+        message: "acceptance criteria are missing"
+      - id: SPEC-GATE-011
+        requires: acceptance_criteria_given_when_then
+        message: "acceptance criteria are not written in Given/When/Then form"
+      - id: SPEC-GATE-012
+        requires: outbound_ports
+        message: "outbound ports are undefined"
+      - id: SPEC-GATE-013
+        requires: inbound_port
+        message: "the inbound port is undefined"
+      - id: SPEC-GATE-014
+        requires: test_strategy
+        message: "test strategy is incomplete"
+      - id: SPEC-GATE-015
+        requires: architecture_file
+        message: "architecture.md is missing"
+      - id: SPEC-GATE-016
+        requires: no_blocking_open_questions
+        message: "blocking open questions are still unresolved"
+      - id: SPEC-GATE-017
+        requires: ubiquitous_language
+        message: "the ubiquitous language section is empty"
+    IMPLEMENTING:
+      - id: SPEC-GATE-020
+        requires: spdd_prompt
+        message: "no versioned SPDD prompt (prompt.reasons.md) is linked"
+      - id: SPEC-GATE-021
+        requires: task_plan
+        message: "tasks.md is missing"
+    VERIFIED:
+      - id: SPEC-GATE-030
+        requires: evidence
+        message: "evidence.md is missing or records no executed command"
+      - id: SPEC-GATE-031
+        requires: all_acceptance_criteria_covered
+        message: "not every acceptance criterion is covered by evidence"
+    RELEASED:
+      - id: SPEC-GATE-040
+        requires: traceability
+        message: "traceability.yaml is missing"
+      - id: SPEC-GATE-041
+        requires: traceability_resolves
+        message: "traceability.yaml references files or tests that do not exist"
+
+frontmatter:
+  required_fields:
+    - id
+    - title
+    - status
+    - type
+    - owner
+    - created_at
+    - updated_at
+    - languages
+    - bounded_context
+    - risk_level
+  optional_fields:
+    - related_adrs
+    - related_issues
+    - prompt_artifacts
+    - supersedes
+    - superseded_by
+  enums:
+    type: [feature, bug-fix, hotfix, architecture-change, refactoring, documentation]
+    risk_level: [low, medium, high, critical]
+    languages: [java, python, none]
+
+golden_path:
+  - step: 1
+    name: Intake
+    produces: issue
+  - step: 2
+    name: Draft specification
+    skill: /sdd-init then /sdd-specify
+    produces: spec.md
+  - step: 3
+    name: Clarification
+    skill: /sdd-clarify
+    produces: clarifications.md
+  - step: 4
+    name: Specification review
+    produces: review comments
+  - step: 5
+    name: Approval
+    produces: status APPROVED
+  - step: 6
+    name: Architecture plan
+    skill: /sdd-plan
+    produces: architecture.md
+  - step: 7
+    name: Task decomposition
+    skill: /sdd-plan
+    produces: tasks.md
+  - step: 8
+    name: SPDD prompt generation
+    skill: /spdd-generate
+    produces: prompt.reasons.md
+  - step: 9
+    name: Incremental implementation
+    skill: /implement-java-feature or /implement-python-feature
+    produces: source code and tests
+  - step: 10
+    name: Automated verification
+    produces: test and gate results
+  - step: 11
+    name: Architecture review
+    skill: /architecture-check
+    produces: architecture report
+  - step: 12
+    name: Human review
+    produces: approvals
+  - step: 13
+    name: Evidence collection
+    produces: evidence.md
+  - step: 14
+    name: Release
+    produces: tag and release notes
+  - step: 15
+    name: Specification closure
+    skill: /close-spec
+    produces: status RELEASED and traceability.yaml
+
+production_code_paths:
+  description: >-
+    Changes touching these paths require an approved specification referenced in
+    the pull request body.
+  include:
+    - "examples/java-hexagonal/**/src/main/**"
+    - "examples/python-hexagonal/src/**"
+    - "tools/**/src/**"
+  exclude:
+    - "**/README.md"
+    - "**/*.md"
+
+pull_request:
+  requires_spec_id: true
+  spec_id_pattern: "SPEC-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})"
+  requires_prompt_id_when_implementing: true
+  prompt_id_pattern: "PROMPT-(?:[0-9]{4}-[0-9]{3}|EXAMPLE-[0-9]{3})"
+
+references:
+  - docs/concepts/sdd.md
+  - docs/workflows/feature-lifecycle.md
+  - schemas/feature-spec.schema.json

@@ -1,0 +1,134 @@
+---
+# Canonical testing policy.
+# Generated adapters must never be edited by hand — change this file instead.
+id: testing-policy
+version: 1.0.0
+title: Testing Policy
+status: active
+owner: pedroartelabs
+
+summary: >-
+  Tests are organised by what they prove, not by folder habit. Domain tests are
+  fast and pure. Application tests use fakes for outbound ports. Contract tests
+  prove every implementation of a port behaves identically. Architecture tests
+  prove the structure itself.
+
+levels:
+  - id: domain
+    title: Domain tests
+    characteristics: [fast, pure, no framework, no database, no network]
+    focus: [invariants, value object equality, state transitions, domain events]
+    techniques: [example-based, property-based]
+    java_location: "examples/java-hexagonal/payment-domain/src/test/java"
+    python_location: "examples/python-hexagonal/tests/unit"
+
+  - id: application
+    title: Application tests
+    characteristics: [fakes for outbound ports, no real infrastructure]
+    focus: [use case orchestration, success and failure paths, idempotency, authorization]
+    java_location: "examples/java-hexagonal/payment-application/src/test/java"
+    python_location: "examples/python-hexagonal/tests/unit"
+
+  - id: contract
+    title: Port contract tests
+    characteristics: [one shared contract suite executed against every implementation]
+    focus: [in-memory and persistence adapters must satisfy the same contract]
+    java_location: "examples/java-hexagonal/payment-adapter-out-memory/src/test/java"
+    python_location: "examples/python-hexagonal/tests/contract"
+
+  - id: adapter_integration
+    title: Adapter and integration tests
+    characteristics: [real serialization, real mapping, real storage where it matters]
+    focus: [serialization, mapping, error translation, persistence]
+    java_location: "examples/java-hexagonal/payment-adapter-in-rest/src/test/java"
+    python_location: "examples/python-hexagonal/tests/integration"
+
+  - id: architecture
+    title: Architecture tests
+    characteristics: [deterministic, blocking, run on every pull request]
+    focus: [dependency direction, isolation, cycles, forbidden frameworks, naming, composition]
+    java_location: "examples/java-hexagonal/payment-architecture-tests/src/test/java"
+    python_location: "examples/python-hexagonal/tests/architecture"
+
+  - id: end_to_end
+    title: End-to-end tests
+    characteristics: [few, representative, stable, no unnecessary external dependency]
+    focus: [the whole slice from inbound adapter to outbound adapter]
+    java_location: "examples/java-hexagonal/payment-bootstrap/src/test/java"
+    python_location: "examples/python-hexagonal/tests/end_to_end"
+
+coverage:
+  thresholds:
+    - scope: domain_and_application
+      line: 95
+      branch: 90
+      blocking: true
+    - scope: repository_overall
+      line: 85
+      branch: 75
+      blocking: true
+  exclusions_must_be_documented: true
+  rules:
+    - Coverage is a floor, not a goal. A covered line is not a tested behaviour.
+    - Lowering a threshold requires an ADR and a CODEOWNERS approval.
+
+mutation_testing:
+  enabled: true
+  execution: separate-job
+  trigger: [schedule, workflow_dispatch]
+  rationale: >-
+    Mutation testing is valuable but slow. Keeping it out of the pull request
+    critical path preserves fast feedback without losing the signal.
+  java_tool: pitest
+  python_tool: mutmut
+
+forbidden:
+  - id: TEST-001
+    rule: A test must not be skipped, ignored or disabled without a linked issue and a written reason.
+    severity: blocker
+    detects: ["@Disabled", "@Ignore", "pytest.mark.skip", "pytest.mark.xfail", "it.skip"]
+  - id: TEST-002
+    rule: Architecture tests must never be suppressed to make a change pass.
+    severity: blocker
+  - id: TEST-003
+    rule: Assertions must be specific. A test that only asserts "no exception" proves almost nothing.
+    severity: medium
+  - id: TEST-004
+    rule: Tests must not depend on execution order or on wall-clock time.
+    severity: high
+  - id: TEST-005
+    rule: Negative architecture fixtures must be asserted as rejected, never as accepted.
+    severity: blocker
+
+negative_fixtures:
+  description: >-
+    Showing valid code proves nothing about enforcement. Each control ships with
+    a deliberately invalid fixture and a test asserting the control rejects it.
+  root: architecture-fixtures
+  cases:
+    - id: FIX-J-001
+      path: architecture-fixtures/java-valid
+      expectation: accepted
+    - id: FIX-J-002
+      path: architecture-fixtures/java-invalid-domain-framework-import
+      expectation: rejected
+      violates: ARCH-001
+    - id: FIX-J-003
+      path: architecture-fixtures/java-invalid-adapter-dependency
+      expectation: rejected
+      violates: ARCH-004
+    - id: FIX-P-001
+      path: architecture-fixtures/python-valid
+      expectation: accepted
+    - id: FIX-P-002
+      path: architecture-fixtures/python-invalid-domain-framework-import
+      expectation: rejected
+      violates: ARCH-001
+    - id: FIX-P-003
+      path: architecture-fixtures/python-invalid-adapter-dependency
+      expectation: rejected
+      violates: ARCH-004
+
+references:
+  - docs/reference/quality-gates.md
+  - governance/quality-gates.md

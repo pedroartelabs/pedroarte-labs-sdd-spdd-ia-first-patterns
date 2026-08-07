@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns/schemas/architecture-policy.schema.json",
+  "title": "Canonical architecture policy",
+  "description": "Validates governance/policies/architecture-policy.yaml. The policy is the single source of truth from which agent instruction files are generated, so a malformed policy must fail loudly rather than silently generate weaker rules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "title", "status", "layers", "forbidden_dependencies", "forbidden_imports", "rules"],
+  "properties": {
+    "id": { "const": "architecture-policy" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "title": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "draft", "retired"] },
+    "owner": { "type": "string" },
+    "strategy": { "type": "string" },
+    "summary": { "type": "string" },
+    "exceptions_register": { "type": "string" },
+    "references": { "type": "array", "items": { "type": "string" } },
+    "layers": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "may_depend_on"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["domain", "application", "adapter_inbound", "adapter_outbound", "bootstrap"]
+          },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "may_depend_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["domain", "application", "adapter_inbound", "adapter_outbound", "bootstrap"]
+            }
+          },
+          "java_package_pattern": { "type": "string" },
+          "python_module_pattern": { "type": "string" },
+          "contains": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "forbidden_dependencies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "forbidden_imports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["java", "python"],
+      "properties": {
+        "java": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "python": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "naming_conventions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "rule"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^NAM-[0-9]{3}$" },
+          "rule": { "type": "string" },
+          "forbidden_substrings": { "type": "array", "items": { "type": "string" } },
+          "applies_to_pattern": { "type": "string" }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "severity", "applies_to", "enforced_by"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ARCH-[0-9]{3}$" },
+          "title": { "type": "string", "minLength": 10 },
+          "severity": { "type": "string", "enum": ["blocker", "high", "medium", "low"] },
+          "applies_to": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "enum": ["java", "python", "repository"] }
+          },
+          "enforced_by": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "A rule with no enforcer is an aspiration, not a rule."
+          },
+          "rationale": { "type": "string" }
+        }
+      }
+    }
+  }
+}

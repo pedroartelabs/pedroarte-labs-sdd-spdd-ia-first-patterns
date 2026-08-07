@@ -1,0 +1,211 @@
+---
+# Canonical quality gate catalogue. Every entry is a condition that FAILS a
+# change. Generated adapters must never be edited by hand.
+id: quality-gates
+version: 1.0.0
+title: Quality Gates
+status: active
+owner: pedroartelabs
+
+summary: >-
+  A gate is only real if something automated enforces it. Each gate below names
+  the workflow, job or script that proves it, so the catalogue cannot drift into
+  wishful thinking.
+
+gates:
+  - id: GATE-001
+    title: Production code without a specification
+    fails_when: A pull request touches production paths without an approved SPEC-ID.
+    severity: blocker
+    enforced_by: scripts/check-pr-spec-link.py
+    workflow: specification-gate.yml
+
+  - id: GATE-002
+    title: Invalid specification
+    fails_when: Frontmatter, identifier, state or required section is invalid.
+    severity: blocker
+    enforced_by: scripts/validate-specs.py
+    workflow: specification-gate.yml
+
+  - id: GATE-003
+    title: Illegal specification state transition
+    fails_when: A specification enters a state whose entry requirements are unmet.
+    severity: blocker
+    enforced_by: scripts/validate-specs.py
+    workflow: specification-gate.yml
+
+  - id: GATE-004
+    title: Unversioned or unlinked prompt
+    fails_when: A prompt has no version, no identifier, or no linked specification.
+    severity: blocker
+    enforced_by: scripts/validate-prompts.py
+    workflow: specification-gate.yml
+
+  - id: GATE-005
+    title: Domain importing a framework
+    fails_when: Domain code imports a forbidden framework package.
+    severity: blocker
+    enforced_by: ArchUnit + Import Linter
+    workflow: architecture-gate.yml
+
+  - id: GATE-006
+    title: Application importing an adapter
+    fails_when: Application code depends on any adapter package.
+    severity: blocker
+    enforced_by: ArchUnit + Import Linter
+    workflow: architecture-gate.yml
+
+  - id: GATE-007
+    title: Adapter-to-adapter dependency
+    fails_when: An inbound adapter imports an outbound adapter or vice versa.
+    severity: blocker
+    enforced_by: ArchUnit + Import Linter
+    workflow: architecture-gate.yml
+
+  - id: GATE-008
+    title: Dependency cycle
+    fails_when: Any package or module cycle is detected.
+    severity: blocker
+    enforced_by: ArchUnit slices + Import Linter independence contract
+    workflow: architecture-gate.yml
+
+  - id: GATE-009
+    title: Architecture test failing
+    fails_when: Any architecture test fails, including the negative fixtures.
+    severity: blocker
+    enforced_by: payment-architecture-tests + tests/architecture
+    workflow: architecture-gate.yml
+
+  - id: GATE-010
+    title: Negative fixture not rejected
+    fails_when: A deliberately invalid fixture is accepted by the controls.
+    severity: blocker
+    enforced_by: tests/architecture/test_fixtures_are_rejected.py
+    workflow: architecture-gate.yml
+
+  - id: GATE-011
+    title: Skipped test without justification
+    fails_when: A test is disabled without a linked issue and a reason.
+    severity: blocker
+    enforced_by: scripts/verify-all.sh quality checks
+    workflow: java-ci.yml, python-ci.yml
+
+  - id: GATE-012
+    title: Coverage below threshold
+    fails_when: Domain/application below 95% line or 85% overall.
+    severity: blocker
+    enforced_by: JaCoCo + pytest-cov
+    workflow: java-ci.yml, python-ci.yml
+
+  - id: GATE-013
+    title: Policy changed without regenerating adapters
+    fails_when: governance/policies changed but generated instruction files did not.
+    severity: blocker
+    enforced_by: scripts/check-generated-rule-drift.py
+    workflow: validate-repository.yml
+
+  - id: GATE-014
+    title: Generated file edited by hand
+    fails_when: A generated file's checksum does not match its canonical source.
+    severity: blocker
+    enforced_by: scripts/check-generated-rule-drift.py
+    workflow: validate-repository.yml
+
+  - id: GATE-015
+    title: Quality gate weakened without an ADR
+    fails_when: A threshold is lowered or a rule removed with no ADR in the change.
+    severity: blocker
+    enforced_by: CODEOWNERS review + scripts/validate-architecture-policy.py
+    workflow: validate-repository.yml
+
+  - id: GATE-016
+    title: Secret detected
+    fails_when: A credential pattern appears anywhere in the tree.
+    severity: blocker
+    enforced_by: gitleaks
+    workflow: security.yml
+
+  - id: GATE-017
+    title: Critical vulnerability introduced
+    fails_when: A dependency change introduces a high or critical advisory.
+    severity: blocker
+    enforced_by: actions/dependency-review-action
+    workflow: dependency-review.yml
+
+  - id: GATE-018
+    title: Broken traceability
+    fails_when: traceability.yaml references a file, test or prompt that does not exist.
+    severity: blocker
+    enforced_by: scripts/validate-traceability.py
+    workflow: specification-gate.yml
+
+  - id: GATE-019
+    title: Missing mandatory documentation
+    fails_when: A required repository document is absent or empty.
+    severity: blocker
+    enforced_by: scripts/validate-repository-structure.py
+    workflow: validate-repository.yml
+
+  - id: GATE-020
+    title: Unlinked critical TODO or FIXME
+    fails_when: A TODO or FIXME exists with no issue reference.
+    severity: high
+    enforced_by: scripts/validate-repository-structure.py
+    workflow: validate-repository.yml
+
+  - id: GATE-021
+    title: Unjustified lint or type suppression
+    fails_when: noqa, type ignore or SuppressWarnings appears with no reason.
+    severity: high
+    enforced_by: scripts/validate-repository-structure.py
+    workflow: python-ci.yml, java-ci.yml
+
+  - id: GATE-022
+    title: Pull request without evidence
+    fails_when: The pull request body records no executed verification command.
+    severity: high
+    enforced_by: scripts/check-pr-spec-link.py
+    workflow: specification-gate.yml
+
+  - id: GATE-023
+    title: Workflow without least-privilege permissions
+    fails_when: A workflow file declares no explicit `permissions` block.
+    severity: blocker
+    enforced_by: scripts/validate-repository-structure.py
+    workflow: validate-repository.yml
+
+exceptions:
+  policy: >-
+    No exception is permanent by default. Every exception expires and is
+    re-reviewed. An expired exception fails the build.
+  required_fields:
+    - id
+    - gate_id
+    - justification
+    - owner
+    - created_at
+    - expires_at
+    - risk
+    - adr
+    - removal_plan
+  register: governance/architecture-exceptions.md
+  max_duration_days: 90
+
+false_positives:
+  policy: >-
+    A false positive is a bug in the gate, not a reason to delete the gate.
+    Narrow the rule, add a targeted and dated exception, and open an issue to fix
+    the detector.
+
+required_status_checks:
+  description: >-
+    These job names must match exactly the jobs implemented in .github/workflows
+    and are the checks referenced by the main branch ruleset.
+  checks:
+    - repository-validation
+    - specification-gate
+    - architecture-gate
+    - java-build
+    - python-build
+    - security-scan
+    - documentation-check
