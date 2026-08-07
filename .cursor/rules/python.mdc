@@ -1,0 +1,24 @@
+---
+description: Python src layout, Protocol-based ports, forbidden framework imports in the domain.
+globs: **/*.py
+alwaysApply: false
+---
+
+<!-- GENERATED FILE — DO NOT EDIT DIRECTLY
+     Source: governance/policies/
+     Regenerate with: make generate-agent-rules
+     Policy checksum: sha256:0357a6ebe4ab8a4e3a4f6d22d43e091de336ef57c1e32c34c9d43b0a4c870768
+-->
+
+# Python
+
+`src` layout, one package per bounded context, hexagonal layers inside.
+
+Forbidden in the domain: `fastapi`, `flask`, `django`, `starlette`, `sqlalchemy`, `pydantic`, `boto3`, `botocore`, `httpx`, `requests`, `aiohttp`, `kafka`, `confluent_kafka`, `redis`, `psycopg`, `pymongo`.
+
+Forbidden in the application: `fastapi`, `flask`, `django`, `starlette`, `sqlalchemy`, `boto3`, `httpx`, `requests`, `kafka`, `redis`, `psycopg`.
+
+- Ports are `typing.Protocol` definitions in `application/ports`.
+- Domain models are plain dataclasses; value objects are frozen.
+- No blanket `Any`, no unexplained `# type: ignore`.
+- Import Linter contracts in `.importlinter` are the executable form of these rules.

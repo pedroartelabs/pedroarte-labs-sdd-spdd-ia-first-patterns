@@ -1,0 +1,41 @@
+---
+description: SDD and SPDD process: specification first, versioned structured prompt, evidence before completion.
+globs: specs/**,prompts/**
+alwaysApply: false
+---
+
+<!-- GENERATED FILE — DO NOT EDIT DIRECTLY
+     Source: governance/policies/
+     Regenerate with: make generate-agent-rules
+     Policy checksum: sha256:0357a6ebe4ab8a4e3a4f6d22d43e091de336ef57c1e32c34c9d43b0a4c870768
+-->
+
+# SDD and SPDD
+
+An explicit, versioned, reviewable and testable specification drives planning, implementation, tests and validation. The specification is not a disposable document: it remains the source of intent, scope, rules, acceptance criteria, constraints, risks, decisions and traceability.
+
+## Lifecycle
+
+DRAFT → IN_REVIEW → APPROVED → IMPLEMENTING → VERIFIED → RELEASED
+
+## REASONS
+
+- **R — Requirements**: which problem is solved; for whom; expected behaviour
+- **E — Entities**: entities, aggregates, value objects; commands and events; states and invariants
+- **A — Approach**: implementation strategy; alternatives considered; trade-offs
+- **S — Structure**: bounded context; modules and layers; ports and adapters
+- **O — Operations**: small steps in order; verifiable tasks; tests per step
+- **N — Norms**: code standards and conventions; observability; error handling
+- **S — Safeguards**: domain invariants; forbidden dependencies; security boundaries
+
+## Safeguards
+
+- do not modify files outside the declared scope
+- do not move domain logic into adapters
+- do not introduce a framework into the domain
+- do not disable or skip tests
+- do not weaken quality gates
+- do not suppress lint or type rules without a written justification
+- do not run destructive commands
+- stop on critical ambiguity instead of guessing
+- present evidence before declaring completion

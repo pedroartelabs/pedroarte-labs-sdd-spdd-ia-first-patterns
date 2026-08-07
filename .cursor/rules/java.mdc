@@ -1,0 +1,26 @@
+---
+description: Java module boundaries and forbidden framework imports in the domain.
+globs: **/*.java
+alwaysApply: false
+---
+
+<!-- GENERATED FILE — DO NOT EDIT DIRECTLY
+     Source: governance/policies/
+     Regenerate with: make generate-agent-rules
+     Policy checksum: sha256:0357a6ebe4ab8a4e3a4f6d22d43e091de336ef57c1e32c34c9d43b0a4c870768
+-->
+
+# Java
+
+Multi-module Maven enforces boundaries at compile time.
+
+- `payment-domain` depends on nothing.
+- `payment-application` depends only on `payment-domain`.
+- Adapters depend on application and domain, never on each other.
+- Only `payment-bootstrap` performs composition.
+
+Forbidden in the domain: `org.springframework`, `jakarta.persistence`, `jakarta.servlet`, `javax.persistence`, `org.hibernate`, `com.fasterxml.jackson`, `org.apache.kafka`, `software.amazon.awssdk`, `java.sql`, `javax.sql`, `java.net.http`, `io.micrometer`, `org.slf4j`.
+
+Forbidden in the application: `org.springframework`, `jakarta.persistence`, `org.hibernate`, `com.fasterxml.jackson`, `org.apache.kafka`, `software.amazon.awssdk`, `java.sql`, `java.net.http`.
+
+JUnit 5 + AssertJ for behaviour, ArchUnit for structure, JaCoCo for coverage.

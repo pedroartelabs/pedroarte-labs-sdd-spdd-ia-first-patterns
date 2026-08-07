@@ -1,0 +1,7 @@
+# Dependencies for the repository governance scripts (scripts/*.py).
+#
+# Deliberately tiny: these scripts are the enforcement layer, so they must run
+# on a bare Python install in CI without dragging in the example projects'
+# dependency trees. Pinned for reproducibility; Dependabot proposes bumps.
+PyYAML==6.0.2
+jsonschema==4.23.0
