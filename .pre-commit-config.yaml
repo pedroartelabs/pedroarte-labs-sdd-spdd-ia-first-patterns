@@ -1,0 +1,89 @@
+# Pre-commit hooks: the fast, local half of the enforcement story.
+#
+# These catch the cheap mistakes before they reach CI. They do NOT replace the
+# quality gates — the architecture gate, specification gate and coverage
+# thresholds run in GitHub Actions where they cannot be skipped with
+# `--no-verify`. Local hooks are a convenience; CI is the authority.
+#
+# Install with: make setup   (or: pre-commit install)
+minimum_pre_commit_version: "3.5.0"
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^LICENSE$|\.md$'
+      - id: end-of-file-fixer
+        exclude: '^LICENSE$'
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: '\.(cmd|bat|ps1)$'
+      - id: no-commit-to-branch
+        args: [--branch, main]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: '^(examples/python-hexagonal|tools/ai-review|scripts)/'
+      - id: ruff-format
+        files: '^(examples/python-hexagonal|tools/ai-review|scripts)/'
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.23.1
+    hooks:
+      - id: gitleaks
+
+  # ---------------------------------------------------------------------
+  # Repository-specific gates. These run the same scripts CI runs, so a
+  # developer sees the same message locally that a reviewer sees on the
+  # pull request.
+  # ---------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: check-generated-rule-drift
+        name: generated agent rules match canonical policy
+        entry: python scripts/check-generated-rule-drift.py
+        language: system
+        pass_filenames: false
+        files: '^(governance/policies/|CLAUDE\.md|AGENTS\.md|\.claude/rules/|\.github/copilot-instructions\.md|\.cursor/rules/)'
+
+      - id: validate-architecture-policy
+        name: canonical architecture policy is valid
+        entry: python scripts/validate-architecture-policy.py
+        language: system
+        pass_filenames: false
+        files: '^(governance/policies/architecture-policy\.yaml|schemas/architecture-policy\.schema\.json)$'
+
+      - id: validate-specs
+        name: specifications are valid and transitions are legal
+        entry: python scripts/validate-specs.py
+        language: system
+        pass_filenames: false
+        files: '^specs/'
+
+      - id: validate-prompts
+        name: SPDD prompts are versioned and linked to a specification
+        entry: python scripts/validate-prompts.py
+        language: system
+        pass_filenames: false
+        files: '^(specs/|prompts/)'
+
+      - id: validate-traceability
+        name: traceability references resolve
+        entry: python scripts/validate-traceability.py
+        language: system
+        pass_filenames: false
+        files: '^specs/'

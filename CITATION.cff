@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+title: >-
+  PedroArte Labs SDD, SPDD and AI-First Patterns
+message: >-
+  If you use these patterns in academic work or in a public write-up, please
+  cite this repository.
+type: software
+authors:
+  - alias: pedroartelabs
+    name: PedroArte Labs
+    website: "https://github.com/pedroartelabs"
+repository-code: >-
+  https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns
+url: >-
+  https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns
+abstract: >-
+  A public reference implementation of governed AI-First software delivery. It
+  combines Spec-Driven Development (SDD), Structured Prompt-Driven Development
+  (SPDD) using the REASONS model, Hexagonal Architecture organised by bounded
+  context, executable architecture fitness functions, Claude Code Skills,
+  subagents and enforcement hooks, and deterministic CI quality gates, with
+  working reference implementations in Java and Python. Its central claim is
+  that in an AI-First process artificial intelligence must be a governed
+  participant in the engineering cycle rather than an unconstrained code
+  generator, and that architectural rules are only real when something
+  automated enforces them — demonstrated here by deliberately invalid fixtures
+  that the controls are proven to reject.
+keywords:
+  - ai-first
+  - spec-driven-development
+  - structured-prompt-driven-development
+  - spdd
+  - sdd
+  - hexagonal-architecture
+  - ports-and-adapters
+  - clean-architecture
+  - domain-driven-design
+  - architecture-testing
+  - fitness-functions
+  - archunit
+  - import-linter
+  - software-governance
+  - claude-code
+  - agent-skills
+  - prompt-engineering
+  - java
+  - python
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-08-06"
