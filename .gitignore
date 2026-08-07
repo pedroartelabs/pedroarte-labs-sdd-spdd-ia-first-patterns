@@ -1,0 +1,89 @@
+# --- Local SDD state -------------------------------------------------------
+# .sdd/active-spec points the Claude Code hooks at the specification currently
+# being implemented. It is per-developer state, never shared.
+.sdd/
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib60/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+.venv/
+venv/
+ENV/
+env/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+.mutmut-cache
+mutants/
+
+# --- Java ------------------------------------------------------------------
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Editors and IDEs ------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Secrets and local configuration ---------------------------------------
+# Only .env.example (with fictitious values) is ever committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!**/testdata/**/*.key
+secrets.yaml
+credentials.json
+
+# --- Build and tooling output ----------------------------------------------
+node_modules/
+*.log
+.tmp/
+tmp/
+reports/
+ai-review-report.md
+ai-review-report.sarif

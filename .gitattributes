@@ -1,0 +1,32 @@
+# Normalise line endings so the generated-file drift check produces identical
+# results on Windows, macOS and Linux. Without this, a Windows checkout would
+# fail `make check-rule-drift` for reasons that have nothing to do with policy.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF or cmd.exe misparses them.
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.jar  binary
+*.zip  binary
+
+# Language statistics: the reference implementations are the point of this
+# repository, so do not let GitHub classify them as vendored samples.
+examples/**   linguist-documentation=false
+architecture-fixtures/** linguist-vendored
+
+# Generated files: collapse them in pull request diffs. They are still checked
+# byte-for-byte by scripts/check-generated-rule-drift.py.
+CLAUDE.md                       linguist-generated=true
+AGENTS.md                       linguist-generated=true
+.claude/rules/*.md              linguist-generated=true
+.github/copilot-instructions.md linguist-generated=true
+.cursor/rules/*.mdc             linguist-generated=true
