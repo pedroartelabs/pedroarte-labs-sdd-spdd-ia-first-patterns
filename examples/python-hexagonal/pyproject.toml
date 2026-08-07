@@ -1,0 +1,151 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "payment-hexagonal"
+version = "0.1.0"
+description = "Python hexagonal architecture reference for the Create PIX Payment example. Educational only: no real bank integration."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+authors = [{ name = "PedroArte Labs" }]
+keywords = ["hexagonal-architecture", "ports-and-adapters", "ddd", "reference"]
+classifiers = [
+  "Private :: Do Not Upload",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+# Frameworks live in the adapters, never in the domain. They are real
+# dependencies here on purpose: an Import Linter contract forbidding `fastapi`
+# inside `payment.domain` only proves something if `fastapi` is actually
+# installed and importable.
+dependencies = [
+  "fastapi>=0.115.0,<1.0.0",
+  "sqlalchemy>=2.0.36,<3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.4,<9.0.0",
+  "pytest-cov>=6.0.0,<7.0.0",
+  "httpx>=0.28.1,<1.0.0",
+  "hypothesis>=6.122.3,<7.0.0",
+  "ruff>=0.8.6,<1.0.0",
+  "mypy>=1.14.1,<2.0.0",
+  "import-linter>=2.1,<3.0",
+  "bandit>=1.8.0,<2.0.0",
+  # The architecture tests read governance/policies/*.yaml so that the fixture
+  # list has exactly one source of truth.
+  "PyYAML>=6.0.2,<7.0.0",
+  "types-PyYAML>=6.0.12,<7.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/pedroartelabs/pedroarte-labs-sdd-spdd-ia-first-patterns"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/payment"]
+
+# ---------------------------------------------------------------------------
+# Ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",    # pycodestyle
+  "F",         # pyflakes
+  "I",         # isort
+  "N",         # pep8-naming
+  "UP",        # pyupgrade
+  "B",         # flake8-bugbear
+  "C4",        # comprehensions
+  "SIM",       # simplify
+  "TID",       # tidy imports
+  "RUF",       # ruff-specific
+  "ANN",       # annotations
+  "S",         # bandit-style security
+  "DTZ",       # naive datetime usage
+]
+ignore = [
+  "ANN401",  # allow Any in the few places a Protocol genuinely needs it
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use `assert` and need no return annotations on fixtures.
+# DTZ001 is deliberately NOT ignored here: a naive datetime in a test is
+# usually a bug, and the two places that build one on purpose carry an explicit
+# `# noqa: DTZ001` explaining why. A blanket ignore would hide the accidents
+# along with the intentional cases.
+"tests/**" = ["S101", "ANN"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+# `tests` is first-party here; without this, isort groups `tests.support`
+# with third-party packages and every test file reports I001.
+known-first-party = ["payment", "tests"]
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+warn_no_return = true
+show_error_codes = true
+pretty = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+# Tests exercise failure paths with deliberately wrong values; strict return
+# typing on every fixture adds noise without adding safety.
+module = "tests.*"
+disallow_untyped_defs = false
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "architecture: proves a structural rule, not a behaviour",
+  "contract: one suite executed against every implementation of a port",
+  "integration: touches a real adapter implementation",
+  "e2e: exercises the whole slice through the composition root",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["payment"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# Repository-wide floor. The stricter domain/application floor (95% line,
+# 90% branch) is enforced by a separate invocation in the Makefile, because
+# coverage.py applies fail_under to the whole measured set.
+fail_under = 85
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "\\.\\.\\.",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests"]

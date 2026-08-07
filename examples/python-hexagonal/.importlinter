@@ -1,0 +1,140 @@
+# Import Linter contracts: the executable form of the architecture policy.
+#
+# These are fitness functions, not documentation. Each contract below maps to a
+# rule in governance/policies/architecture-policy.yaml, and the mapping is
+# checked by tests/architecture/test_contracts_match_policy.py so that the two
+# cannot drift apart.
+#
+# Run with: lint-imports --config .importlinter
+
+[importlinter]
+root_packages =
+    payment
+include_external_packages = True
+
+# --------------------------------------------------------------------------
+# ARCH-002 / ARCH-003 / ARCH-007 — dependencies point inward.
+#
+# A layers contract is the cleanest expression of the whole hexagon: anything
+# higher may import anything lower, never the reverse. Listing adapters as
+# independent siblings on one level also gives us ARCH-004 and ARCH-005 for
+# free, because independent layers may not import each other.
+# --------------------------------------------------------------------------
+[importlinter:contract:layers]
+name = ARCH-002/003/007 — hexagonal layers point inward
+type = layers
+layers =
+    payment.bootstrap
+    payment.adapters.inbound : payment.adapters.outbound
+    payment.application
+    payment.domain
+exhaustive = False
+
+# --------------------------------------------------------------------------
+# ARCH-004 / ARCH-005 — adapters are siblings and must never call each other.
+#
+# The layers contract above already implies this, but stating it explicitly
+# gives a far better failure message: "inbound imports outbound" rather than
+# "layer ordering violated".
+# --------------------------------------------------------------------------
+[importlinter:contract:adapter-independence]
+name = ARCH-004/005 — inbound and outbound adapters are independent
+type = independence
+modules =
+    payment.adapters.inbound
+    payment.adapters.outbound
+
+# --------------------------------------------------------------------------
+# ARCH-001 — no framework may reach the domain.
+#
+# This is the contract that most often catches a real mistake, usually via an
+# innocent-looking `from pydantic import BaseModel` in a value object.
+# --------------------------------------------------------------------------
+[importlinter:contract:domain-is-framework-free]
+name = ARCH-001 — domain imports no framework
+type = forbidden
+source_modules =
+    payment.domain
+forbidden_modules =
+    fastapi
+    starlette
+    flask
+    django
+    sqlalchemy
+    pydantic
+    boto3
+    botocore
+    httpx
+    requests
+    aiohttp
+    kafka
+    confluent_kafka
+    redis
+    psycopg
+    pymongo
+allow_indirect_imports = False
+
+# --------------------------------------------------------------------------
+# ARCH-001 (application) — the application orchestrates, it does not integrate.
+#
+# `pydantic` is deliberately absent here: an application-level command object
+# built with pydantic is a defensible choice, whereas a pydantic domain model
+# is not. The policy draws the line in the same place.
+# --------------------------------------------------------------------------
+[importlinter:contract:application-is-framework-free]
+name = ARCH-001 — application imports no framework
+type = forbidden
+source_modules =
+    payment.application
+forbidden_modules =
+    fastapi
+    starlette
+    flask
+    django
+    sqlalchemy
+    boto3
+    httpx
+    requests
+    kafka
+    redis
+    psycopg
+allow_indirect_imports = False
+
+# --------------------------------------------------------------------------
+# ARCH-012 — time and identity are decisions, not ambient facts.
+#
+# `uuid` and a wall-clock read inside the domain make behaviour untestable and
+# non-deterministic. They belong behind the Clock and IdGenerator ports.
+# --------------------------------------------------------------------------
+[importlinter:contract:domain-has-no-ambient-io]
+name = ARCH-012 — domain does not read the clock or generate identity
+type = forbidden
+source_modules =
+    payment.domain
+forbidden_modules =
+    uuid
+    random
+    secrets
+    os
+    socket
+    pathlib
+allow_indirect_imports = False
+
+# --------------------------------------------------------------------------
+# ARCH-007 — only bootstrap composes.
+#
+# Nothing may import the composition root. The moment an adapter reaches back
+# into bootstrap to fetch a dependency, the container has become a service
+# locator and the dependency graph stops being inspectable.
+# --------------------------------------------------------------------------
+[importlinter:contract:bootstrap-is-not-imported]
+name = ARCH-007 — nothing imports the composition root
+type = forbidden
+source_modules =
+    payment.domain
+    payment.application
+    payment.adapters.inbound
+    payment.adapters.outbound
+forbidden_modules =
+    payment.bootstrap
+allow_indirect_imports = False
