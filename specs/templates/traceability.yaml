@@ -1,0 +1,22 @@
+---
+# Traceability manifest for {SPEC-ID}.
+#
+# requirement -> acceptance criterion -> use case -> source -> tests ->
+# architecture rules -> ADRs -> prompt -> evidence
+spec_id: SPEC-YYYY-NNN
+generated_at: YYYY-MM-DD
+
+requirements:
+  REQ-001:
+    description: ""
+    acceptance_criteria: []
+    use_cases: []
+    source_files: []
+    tests:
+      - language: python
+        name: ""
+        file: ""
+    architecture_rules: []
+    adrs: []
+    prompts: []
+    evidence: []

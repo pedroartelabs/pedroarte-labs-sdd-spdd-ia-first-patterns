@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a new feature or enhancement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should this work?
+    validations:
+      required: true
+  - type: dropdown
+    id: bounded-context
+    attributes:
+      label: Bounded context
+      options:
+        - payment
+        - new context
+        - governance
+        - tooling
+    validations:
+      required: true

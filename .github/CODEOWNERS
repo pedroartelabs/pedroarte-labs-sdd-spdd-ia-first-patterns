@@ -1,0 +1,8 @@
+# Governance and policy — changes require explicit review.
+governance/                @pedroartelabs
+.github/                   @pedroartelabs
+.claude/                   @pedroartelabs
+schemas/                   @pedroartelabs
+scripts/                   @pedroartelabs
+CLAUDE.md                  @pedroartelabs
+AGENTS.md                  @pedroartelabs

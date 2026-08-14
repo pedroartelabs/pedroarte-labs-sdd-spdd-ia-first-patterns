@@ -14,7 +14,7 @@ Skills, and deterministic quality gates for Java and Python.
 
 In an AI-First process, artificial intelligence is not merely a code generator. It is a governed participant in the engineering cycle, working from specifications, structured prompts, architectural policy and automated validation.
 
-AI-First is **not** Vibe coding, Unrestricted code generation, Merging on a model's opinion.
+AI-First is **not** vibe coding, unrestricted code generation, merging on a model's opinion.
 
 ## Canonical source of rules
 

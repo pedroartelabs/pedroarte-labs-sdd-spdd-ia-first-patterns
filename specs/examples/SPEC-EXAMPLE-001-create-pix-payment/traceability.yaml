@@ -1,0 +1,206 @@
+---
+# Traceability manifest for SPEC-EXAMPLE-001.
+#
+# requirement -> acceptance criterion -> use case -> source -> tests ->
+# architecture rules -> ADRs -> prompt -> evidence
+#
+# Traceability is centralised here and in the pull request, deliberately. The
+# alternative — a SPEC-ID comment on every function — decays within weeks,
+# because a comment has nothing checking it. Every path below is verified to
+# exist by scripts/validate-traceability.py, so this file cannot rot silently.
+spec_id: SPEC-EXAMPLE-001
+generated_at: 2026-08-06
+
+requirements:
+  REQ-001:
+    description: Accept a valid PIX payment request and record it durably as PENDING.
+    acceptance_criteria: [AC-001, AC-002]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/domain/payment.py
+      - examples/python-hexagonal/src/payment/application/use_cases/create_pix_payment.py
+      - examples/python-hexagonal/src/payment/application/ports/inbound/create_pix_payment.py
+      - examples/java-hexagonal/payment-domain/src/main/java/labs/pedroarte/payment/domain/Payment.java
+      - examples/java-hexagonal/payment-application/src/main/java/labs/pedroarte/payment/application/usecase/CreatePixPaymentService.java
+    tests:
+      - language: python
+        name: TestHappyPath::test_creates_a_pending_payment
+        file: examples/python-hexagonal/tests/unit/test_create_pix_payment_use_case.py
+      - language: python
+        name: TestCreatePayment::test_creates_a_payment
+        file: examples/python-hexagonal/tests/end_to_end/test_create_payment_api.py
+      - language: java
+        name: CreatePixPaymentServiceTest#createsAPendingPayment
+        file: examples/java-hexagonal/payment-application/src/test/java/labs/pedroarte/payment/application/usecase/CreatePixPaymentServiceTest.java
+    architecture_rules: [ARCH-002, ARCH-003]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001, EVIDENCE-002]
+
+  REQ-002:
+    description: Publish exactly one PaymentCreated event per accepted payment, carrying a masked key.
+    acceptance_criteria: [AC-002, AC-012]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/domain/events.py
+      - examples/python-hexagonal/src/payment/application/ports/outbound/payment_event_publisher.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/system/logging_event_publisher.py
+      - examples/java-hexagonal/payment-domain/src/main/java/labs/pedroarte/payment/domain/PaymentCreated.java
+    tests:
+      - language: python
+        name: TestEvents::test_pulling_events_drains_them
+        file: examples/python-hexagonal/tests/unit/test_payment_aggregate.py
+      - language: python
+        name: TestCreation::test_the_event_carries_a_masked_key_not_a_raw_one
+        file: examples/python-hexagonal/tests/unit/test_payment_aggregate.py
+      - language: java
+        name: PaymentTest#recordsPaymentCreatedWithMaskedKey
+        file: examples/java-hexagonal/payment-domain/src/test/java/labs/pedroarte/payment/domain/PaymentTest.java
+    architecture_rules: [ARCH-003]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001]
+
+  REQ-003:
+    description: Replaying an idempotency key returns the original payment and creates nothing new.
+    acceptance_criteria: [AC-003]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/application/use_cases/create_pix_payment.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/persistence/models.py
+      - examples/java-hexagonal/payment-application/src/main/java/labs/pedroarte/payment/application/usecase/CreatePixPaymentService.java
+    tests:
+      - language: python
+        name: TestIdempotency::test_a_replay_creates_nothing_new
+        file: examples/python-hexagonal/tests/unit/test_create_pix_payment_use_case.py
+      - language: python
+        name: TestIdempotency::test_a_replay_returns_200_not_201
+        file: examples/python-hexagonal/tests/end_to_end/test_create_payment_api.py
+      - language: python
+        name: TestDatabaseConstraints::test_the_idempotency_key_is_unique_at_the_database_level
+        file: examples/python-hexagonal/tests/integration/test_sql_payment_repository.py
+      - language: java
+        name: CreatePixPaymentServiceTest#replayReturnsTheOriginalPayment
+        file: examples/java-hexagonal/payment-application/src/test/java/labs/pedroarte/payment/application/usecase/CreatePixPaymentServiceTest.java
+    architecture_rules: [ARCH-003]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001, EVIDENCE-002]
+
+  REQ-004:
+    description: Reject invalid amounts, currencies and PIX keys before anything is generated or stored.
+    acceptance_criteria: [AC-004, AC-005, AC-006, AC-007]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/domain/money.py
+      - examples/python-hexagonal/src/payment/domain/pix_key.py
+      - examples/python-hexagonal/src/payment/domain/errors.py
+      - examples/java-hexagonal/payment-domain/src/main/java/labs/pedroarte/payment/domain/Money.java
+      - examples/java-hexagonal/payment-domain/src/main/java/labs/pedroarte/payment/domain/PixKey.java
+    tests:
+      - language: python
+        name: TestConstruction
+        file: examples/python-hexagonal/tests/unit/test_money.py
+      - language: python
+        name: TestValidation
+        file: examples/python-hexagonal/tests/unit/test_pix_key.py
+      - language: python
+        name: TestValidationFailures
+        file: examples/python-hexagonal/tests/unit/test_create_pix_payment_use_case.py
+      - language: java
+        name: MoneyTest
+        file: examples/java-hexagonal/payment-domain/src/test/java/labs/pedroarte/payment/domain/MoneyTest.java
+      - language: java
+        name: PixKeyTest
+        file: examples/java-hexagonal/payment-domain/src/test/java/labs/pedroarte/payment/domain/PixKeyTest.java
+    architecture_rules: [ARCH-002]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001]
+
+  REQ-005:
+    description: Translate infrastructure failures at the adapter boundary and never leak internal detail.
+    acceptance_criteria: [AC-008]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/application/errors.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/persistence/sql_payment_repository.py
+      - examples/python-hexagonal/src/payment/adapters/inbound/rest/payment_controller.py
+    tests:
+      - language: python
+        name: TestErrorTranslation
+        file: examples/python-hexagonal/tests/integration/test_sql_payment_repository.py
+      - language: python
+        name: TestInfrastructureFailure
+        file: examples/python-hexagonal/tests/end_to_end/test_create_payment_api.py
+    architecture_rules: [ARCH-011]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001]
+
+  REQ-006:
+    description: Every repository implementation satisfies one shared contract, including timezone preservation.
+    acceptance_criteria: [AC-009, AC-010]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/application/ports/outbound/payment_repository.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/memory/in_memory_payment_repository.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/persistence/sql_payment_repository.py
+      - examples/python-hexagonal/src/payment/adapters/outbound/persistence/models.py
+    tests:
+      - language: python
+        name: TestSaveAndFindById::test_the_timestamp_stays_timezone_aware
+        file: examples/python-hexagonal/tests/contract/test_payment_repository_contract.py
+      - language: python
+        name: TestFindByIdempotencyKey
+        file: examples/python-hexagonal/tests/contract/test_payment_repository_contract.py
+      - language: java
+        name: PaymentRepositoryContractTest
+        file: examples/java-hexagonal/payment-adapter-out-memory/src/test/java/labs/pedroarte/payment/adapter/out/memory/InMemoryPaymentRepositoryTest.java
+    architecture_rules: [ARCH-010, ARCH-012]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001, EVIDENCE-002]
+
+  REQ-007:
+    description: Enforce the payment lifecycle; terminal states reject transitions without mutating the aggregate.
+    acceptance_criteria: [AC-011]
+    use_cases: [CreatePixPaymentUseCase]
+    source_files:
+      - examples/python-hexagonal/src/payment/domain/payment.py
+      - examples/java-hexagonal/payment-domain/src/main/java/labs/pedroarte/payment/domain/Payment.java
+    tests:
+      - language: python
+        name: TestLifecycle
+        file: examples/python-hexagonal/tests/unit/test_payment_aggregate.py
+      - language: java
+        name: PaymentTest
+        file: examples/java-hexagonal/payment-domain/src/test/java/labs/pedroarte/payment/domain/PaymentTest.java
+    architecture_rules: [ARCH-002]
+    adrs: [ADR-0001]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-001]
+
+  REQ-008:
+    description: Architecture rules are executable and proven capable of failing.
+    acceptance_criteria: [AC-010]
+    use_cases: []
+    source_files:
+      - examples/python-hexagonal/.importlinter
+      - architecture-fixtures/python-valid/.importlinter
+      - architecture-fixtures/python-invalid-domain-framework-import/shopcart/domain/__init__.py
+      - architecture-fixtures/python-invalid-adapter-dependency/shopcart/adapters/inbound/__init__.py
+    tests:
+      - language: python
+        name: test_the_control_reaches_the_expected_verdict
+        file: examples/python-hexagonal/tests/architecture/test_fixtures_are_rejected.py
+      - language: python
+        name: test_only_the_intended_rule_fires
+        file: examples/python-hexagonal/tests/architecture/test_fixtures_are_rejected.py
+      - language: python
+        name: test_every_framework_banned_from_the_domain_has_a_contract
+        file: examples/python-hexagonal/tests/architecture/test_contracts_match_policy.py
+    architecture_rules: [ARCH-001, ARCH-004, ARCH-005, ARCH-006, ARCH-007]
+    adrs: [ADR-0004]
+    prompts: [PROMPT-EXAMPLE-001]
+    evidence: [EVIDENCE-003, EVIDENCE-004]
